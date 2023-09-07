@@ -85,19 +85,18 @@ from slither.core.solidity_types.mapping_type import MappingType
 from slither.core.solidity_types.user_defined_type import UserDefinedType
 from slither.core.solidity_types.elementary_type import ElementaryType
 
-class ProxyPatterns(AbstractDetector, ABC):
-    ARGUMENT = "proxy-patterns"
+class vulnerableDapp(AbstractDetector, ABC):
+    ARGUMENT = "vulnerable_dapp"
     IMPACT = DetectorClassification.INFORMATIONAL
     CONFIDENCE = DetectorClassification.MEDIUM
 
-    HELP = "Proxy contract does not conform to any known standard"
-    WIKI = "https://github.com/crytic/slither/wiki/Upgradeability-Checks#proxy-patterns"
-    WIKI_TITLE = "Proxy Patterns"
+    HELP = "Extract dApp vulnerability related to signing methods"
+    WIKI = "https://github.com/crytic/slither/wiki/Detector-Documentation#vulnerable-dapp"
+    WIKI_TITLE = "dApp vulnerability"
 
     # region wiki_description
     WIKI_DESCRIPTION = """
-Determine whether an upgradeable proxy contract conforms to any known proxy standards, i.e. OpenZeppelin, UUPS, Diamond 
-Multi-Facet Proxy, etc.
+Determine whether a decentralized application uses signing methods or no? if yes, is there any vulnerabilities regarding them?.
 """
     # endregion wiki_description
 
@@ -124,8 +123,7 @@ will be corrupted.
 
     # region wiki_recommendation
     WIKI_RECOMMENDATION = """
-It is better to use one of the common standards for upgradeable proxy contracts. Consider EIP-1967, EIP-1822, EIP-2523, 
-or one of the proxy patterns developed by OpenZeppelin.
+It is better to use eth_signTypedData_v4 using nonce and deadline
 """
 
     # endregion wiki_recommendation
