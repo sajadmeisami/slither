@@ -138,8 +138,8 @@ It is better to use eth_signTypedData_v4 using nonce and deadline
                         ecrecover_usage = not ecrecover_usage
                         ecrecover_count = ecrecover_count + 1
                         A = node.function
-                        A_succ =
-                        for function in A and A_succ:
+                        print(A.name)
+
 
 
 
