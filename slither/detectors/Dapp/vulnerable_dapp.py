@@ -122,25 +122,7 @@ It is better to use eth_signTypedData_v4 using nonce and deadline
     Override AbstractDetector.generate_result to define our own json output format
     """
 
-    def generate_result(
-            self,
-            info: Union[str, List[Union[str, SupportedOutput]]],
-            additional_fields: Optional[Dict] = None,
-    ) -> ProxyOutput:
-        contracts = [i for i in info if isinstance(i, Contract)]
-        if len(contracts) > 0:
-            contract = contracts[0]
-        else:
-            contract = None
-        output = ProxyOutput(
-            contract,
-            info,
-            additional_fields,
-            standard_format=self.STANDARD_JSON,
-            markdown_root=self.slither.markdown_root,
-        )
 
-        return output
 
     def verification_function(self):
         ecrecover_usage = False
