@@ -1,5 +1,4 @@
-from .Dapp.example import Example
-from .Dapp.vulnerable_dapp import vulnerableDapp# pylint: disable=unused-import,relative-beyond-top-level
+# pylint: disable=unused-import,relative-beyond-top-level
 from .examples.backdoor import Backdoor
 from .variables.uninitialized_state_variables import UninitializedStateVarsDetection
 from .variables.uninitialized_storage_variables import UninitializedStorageVars
@@ -93,3 +92,6 @@ from .functions.cyclomatic_complexity import CyclomaticComplexity
 from .operations.cache_array_length import CacheArrayLength
 from .statements.incorrect_using_for import IncorrectUsingFor
 from .operations.encode_packed import EncodePackedCollision
+
+from .Dapp import vulnerable_dapp
+from .Dapp import example
