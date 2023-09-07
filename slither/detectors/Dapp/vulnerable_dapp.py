@@ -103,21 +103,8 @@ Determine whether a decentralized application uses signing methods or no? if yes
     # region wiki_exploit_scenario
     WIKI_EXPLOIT_SCENARIO = """
 ```solidity
-contract Proxy{
-    address logicAddress;
-
-    function() payable {
-        logicAddress.delegatecall(msg.data)
-    }
-}
-
-contract Logic{
-    uint variable1;
-}
-```
-The new version, `V2` does not contain `variable1`. 
-If a new variable is added in an update of `V2`, this variable will hold the latest value of `variable2` and
-will be corrupted.
+contract {
+    
 """
     # endregion wiki_exploit_scenario
 
