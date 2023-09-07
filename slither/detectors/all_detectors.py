@@ -93,5 +93,5 @@ from .operations.cache_array_length import CacheArrayLength
 from .statements.incorrect_using_for import IncorrectUsingFor
 from .operations.encode_packed import EncodePackedCollision
 
-from .Dapp import vulnerable_dapp
-from .Dapp import example
+from .Dapp.example import Example
+from .Dapp.vulnerable_dapp import vulnerableDapp
