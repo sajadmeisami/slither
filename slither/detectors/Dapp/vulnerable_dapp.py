@@ -35,7 +35,12 @@ from slither.slithir.variables.temporary import TemporaryVariable
 from slither.utils.function import get_function_id
 import slither.analyses.data_dependency.data_dependency as data_dependency
 
-from slither.detectors.abstract_detector import AbstractDetector, DetectorClassification, SupportedOutput, Output
+from slither.detectors.abstract_detector import (
+    AbstractDetector,
+    DetectorClassification,
+    SupportedOutput,
+    Output,
+)
 
 
 from typing import Optional, List, Dict, Callable, Tuple, TYPE_CHECKING, Union
@@ -85,6 +90,7 @@ from slither.core.solidity_types.mapping_type import MappingType
 from slither.core.solidity_types.user_defined_type import UserDefinedType
 from slither.core.solidity_types.elementary_type import ElementaryType
 
+
 class vulnerableDapp(AbstractDetector, ABC):
     ARGUMENT = "vulnerable_dapp"
     IMPACT = DetectorClassification.INFORMATIONAL
@@ -122,8 +128,6 @@ It is better to use eth_signTypedData_v4 using nonce and deadline
     Override AbstractDetector.generate_result to define our own json output format
     """
 
-
-
     def verification_function(self):
         ecrecover_usage = False
         ecrecover_count = 0
@@ -134,14 +138,8 @@ It is better to use eth_signTypedData_v4 using nonce and deadline
         for contract in self.contracts:
             for function in contract.functions:
                 for node in function.nodes:
-                    if node.expression == 'ecrecover':
+                    if node.expression == "ecrecover":
                         ecrecover_usage = not ecrecover_usage
                         ecrecover_count = ecrecover_count + 1
                         A = node.function
                         print(A.name)
-
-
-
-
-
-
