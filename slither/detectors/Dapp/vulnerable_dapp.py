@@ -1,6 +1,6 @@
 from abc import ABC
 
-import sha3
+
 from inspect import currentframe, getframeinfo
 from slither.detectors.abstract_detector import AbstractDetector, DetectorClassification
 from typing import Optional, List, Dict, Set, Callable, Tuple, TYPE_CHECKING, Union
@@ -18,7 +18,7 @@ from slither.core.expressions.identifier import Identifier
 from slither.core.expressions.literal import Literal
 from slither.core.declarations.function_contract import FunctionContract
 from slither.core.expressions.expression import Expression
-from slither.core.expressions.expression_typed import ExpressionTyped
+
 from slither.core.expressions.tuple_expression import TupleExpression
 from slither.core.expressions.literal import Literal
 from slither.core.expressions.call_expression import CallExpression
@@ -34,14 +34,14 @@ from slither.core.solidity_types.elementary_type import ElementaryType
 from slither.slithir.variables.temporary import TemporaryVariable
 from slither.utils.function import get_function_id
 import slither.analyses.data_dependency.data_dependency as data_dependency
-import sha3
+
 from slither.detectors.abstract_detector import AbstractDetector, DetectorClassification, SupportedOutput, Output
-from slither.detectors.proxy.proxy_features import ProxyFeatureExtraction
-from slither.utils.proxy_output import ProxyOutput
+
+
 from typing import Optional, List, Dict, Callable, Tuple, TYPE_CHECKING, Union
 from slither.core.cfg.node import NodeType
 from slither.core.declarations.contract import Contract
-from slither.core.children.child_contract import ChildContract
+
 from slither.core.declarations.structure import Structure
 from slither.core.declarations.structure_contract import StructureContract
 from slither.core.declarations.modifier import Modifier
@@ -52,7 +52,7 @@ from slither.core.variables.structure_variable import StructureVariable
 from slither.core.expressions.identifier import Identifier
 from slither.core.expressions.literal import Literal
 from slither.core.declarations.function_contract import FunctionContract
-from slither.core.expressions.expression_typed import ExpressionTyped
+
 from slither.core.expressions.call_expression import CallExpression
 from slither.core.expressions.type_conversion import TypeConversion
 from slither.core.expressions.assignment_operation import AssignmentOperation
@@ -74,7 +74,7 @@ from slither.core.variables.structure_variable import StructureVariable
 from slither.core.expressions.identifier import Identifier
 from slither.core.expressions.literal import Literal
 from slither.core.declarations.function_contract import FunctionContract
-from slither.core.expressions.expression_typed import ExpressionTyped
+
 from slither.core.expressions.call_expression import CallExpression
 from slither.core.expressions.type_conversion import TypeConversion
 from slither.core.expressions.assignment_operation import AssignmentOperation
