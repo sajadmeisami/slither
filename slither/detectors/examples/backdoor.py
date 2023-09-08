@@ -27,16 +27,44 @@ class Backdoor(AbstractDetector):
     def _detect(self) -> List[Output]:
         results = []
 
+        '''for contract in self.compilation_unit.contracts_derived:
+                    # Check if a function has 'backdoor' in its name
+                    for f in contract.functions:
+                        if "digest" in f.name:
+                            # Info to be printed
+                            info: DETECTOR_INFO = ["digest function found in ", f, "\n"]
+
+                            # Add the result in result
+                            res = self.generate_result(info)
+
+                            results.append(res)
+
+
+                return results
+                '''
+
+        ecrecover_usage = False
+        ecrecover_count = 0
+        signature_validitycheck = False
+        deadline_usage = False
+        nonce_usage = False
+
         for contract in self.compilation_unit.contracts_derived:
-            # Check if a function has 'backdoor' in its name
-            for f in contract.functions:
-                if "backdoor" in f.name:
-                    # Info to be printed
-                    info: DETECTOR_INFO = ["Backdoor function found in ", f, "\n"]
+            for function in contract.functions:
+                for node in function.nodes:
+                    print(node)
+                    if node.expression == "ecrecover":
+                        ecrecover_usage = not ecrecover_usage
+                        ecrecover_count = ecrecover_count + 1
+                        A = node.function
+                        print(A.name)
+                        info: DETECTOR_INFO = ["digest function found in ", f, "\n"]
 
-                    # Add the result in result
-                    res = self.generate_result(info)
+                        # Add the result in result
+                        res = self.generate_result(info)
 
-                    results.append(res)
+                        results.append(res)
 
         return results
+
+
