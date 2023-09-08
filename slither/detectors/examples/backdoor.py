@@ -153,7 +153,7 @@ class Backdoor(AbstractDetector):
                         print(A.name)
                         for ir in A.all_slithir_operations():
                             if isinstance(ir, Call):
-                                print(str(ir))
+                                print(ir)
 
                         info: DETECTOR_INFO = ["ecrecover found in function: ", A.name, "\n"]
 
