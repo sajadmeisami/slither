@@ -91,6 +91,7 @@ from slither.core.expressions.index_access import IndexAccess
 from slither.core.solidity_types.mapping_type import MappingType
 from slither.core.solidity_types.user_defined_type import UserDefinedType
 from slither.core.solidity_types.elementary_type import ElementaryType
+from slither.slithir.operations import Call
 
 from slither.detectors.abstract_detector import (
     AbstractDetector,
@@ -150,7 +151,10 @@ class Backdoor(AbstractDetector):
                         ecrecover_count = ecrecover_count + 1
                         A = node.function
                         print(A.name)
-                        #A_succ=A
+                        for ir in A.all_slithir_operations():
+                            if isinstance(ir, Call):
+                                print(str(ir))
+
                         info: DETECTOR_INFO = ["ecrecover found in function: ", A.name, "\n"]
 
                         # Add the result in result
