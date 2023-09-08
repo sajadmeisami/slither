@@ -59,7 +59,7 @@ class Backdoor(AbstractDetector):
                         A = node.function
                         print(A.name)
                         #A_succ=A
-                        info: DETECTOR_INFO = ["ecrecover found in function: ", function.name, "\n"]
+                        info: DETECTOR_INFO = ["ecrecover found in function: ", A.name, "\n"]
 
                         # Add the result in result
                         res = self.generate_result(info)
