@@ -97,7 +97,10 @@ from slither.slithir.operations import SolidityCall
 from slither.slithir.operations import HighLevelCall
 from slither.slithir.operations import LowLevelCall
 from slither.slithir.operations import Condition
-
+from slither.core.declarations.function import Function
+from slither.core.declarations.solidity_variables import SolidityFunction
+from slither.core.declarations.solidity_variables import SolidityFunction
+from slither.core.declarations.function_contract import FunctionContract
 from slither.detectors.abstract_detector import (
     AbstractDetector,
     DetectorClassification,
@@ -156,9 +159,21 @@ class Backdoor(AbstractDetector):
                         ecrecover_count = ecrecover_count + 1
                         A = node.function
                         print(A.name)
+                        #print(A.internal_calls)
+
+
                         for ir in A.all_slithir_operations():
                             if isinstance(ir, Call):
-                                print(ir)
+                                #print(ir)
+                                if isinstance(ir, SolidityCall):
+                                    print(ir.function)
+                                    #if "ecrecover" in ir.function.name:
+                                        #print(ir.function)
+                                elif isinstance(ir, InternalCall):
+                                    A_child=ir.function.nodes
+                                    #print(A_child)
+
+
 
                         info: DETECTOR_INFO = ["ecrecover found in function: ", A.name, "\n"]
 
