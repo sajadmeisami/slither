@@ -92,6 +92,11 @@ from slither.core.solidity_types.mapping_type import MappingType
 from slither.core.solidity_types.user_defined_type import UserDefinedType
 from slither.core.solidity_types.elementary_type import ElementaryType
 from slither.slithir.operations import Call
+from slither.slithir.operations import InternalCall
+from slither.slithir.operations import SolidityCall
+from slither.slithir.operations import HighLevelCall
+from slither.slithir.operations import LowLevelCall
+from slither.slithir.operations import Condition
 
 from slither.detectors.abstract_detector import (
     AbstractDetector,
