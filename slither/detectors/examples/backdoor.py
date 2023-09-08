@@ -52,13 +52,14 @@ class Backdoor(AbstractDetector):
         for contract in self.compilation_unit.contracts_derived:
             for function in contract.functions:
                 for node in function.nodes:
-                    print(node)
-                    if node.expression == "ecrecover":
+                    #print(str(node.expression))
+                    if "ecrecover" in str(node.expression):
                         ecrecover_usage = not ecrecover_usage
                         ecrecover_count = ecrecover_count + 1
                         A = node.function
                         print(A.name)
-                        info: DETECTOR_INFO = ["digest function found in ", f, "\n"]
+                        #A_succ=A
+                        info: DETECTOR_INFO = ["ecrecover found in function: ", function.name, "\n"]
 
                         # Add the result in result
                         res = self.generate_result(info)
