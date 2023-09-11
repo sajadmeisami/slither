@@ -142,8 +142,19 @@ class Backdoor(AbstractDetector):
                         ecrecover_usage = not ecrecover_usage
                         ecrecover_count = ecrecover_count + 1
                         A = node.function
+
+
                         print(A.name)
+                        print(node)
+                        print(A.solidity_signature.)
                         #print(A.internal_calls)
+
+                        if A.visibility in ["external", "public"]:
+                            print("A is external")
+                            for n in A.all_nodes():
+                                exp=n.expression
+                        else:
+                            print("A is not")
 
 
                         for ir in A.all_slithir_operations():
