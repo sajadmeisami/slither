@@ -128,22 +128,6 @@ class Backdoor(AbstractDetector):
     def _detect(self) -> List[Output]:
         results = []
 
-        '''for contract in self.compilation_unit.contracts_derived:
-                    # Check if a function has 'backdoor' in its name
-                    for f in contract.functions:
-                        if "digest" in f.name:
-                            # Info to be printed
-                            info: DETECTOR_INFO = ["digest function found in ", f, "\n"]
-
-                            # Add the result in result
-                            res = self.generate_result(info)
-
-                            results.append(res)
-
-
-                return results
-                '''
-
         ecrecover_usage = False
         ecrecover_count = 0
         signature_validitycheck = False
