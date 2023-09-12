@@ -75,17 +75,11 @@ contract Example {
         // Note: we need to use `encodePacked` here instead of `encode`.
         bytes32 digest = keccak256(abi.encodePacked(
             "\x19\x01",
-            get_domain_separator(),
+            DOMAIN_SEPARATOR,
             hash(mail)
         ));
-        assert(toto());
         return ecrecover(digest, v, r, s) == mail.from.wallet;
     }
-
-    function get_domain_separator() {
-        get_hash_typeddata()
-
-}
 
     function toto() public view returns (bool) {
         Mail memory mail = Mail({

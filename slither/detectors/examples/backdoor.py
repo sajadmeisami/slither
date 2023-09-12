@@ -123,6 +123,33 @@ class Backdoor(AbstractDetector):
     WIKI_EXPLOIT_SCENARIO = ".."
     WIKI_RECOMMENDATION = ".."
 
+    @staticmethod
+    def check_ecrecover_returning_value(funcs_that_calls_ecrecover_func):
+
+        for func in funcs_that_calls_ecrecover_func:
+            parameters = func.parameters
+            for operation in func.all_slithir_operations():
+                if "ecrecover" in str(operation.node.expression):
+                    conditional_node = operation.node
+                    variables_to_check = set(operation.node.variables_written)
+                    variables_checked = set()
+                    while variables_to_check:
+                        ecrecover_var = variables_to_check.pop()
+                        variables_checked.add(ecrecover_var)
+                        for oper in func.all_slithir_operations():
+                            if ecrecover_var.name in str(oper.node.expression):
+                                variables_to_check.update(set(oper.node.variables_written) - variables_checked)
+                                if oper.node.is_conditional():
+                                    conditional_node = oper.node
+                                    variables_to_check = set()  # We want to exit the while loop
+                                    break
+
+                    for parameter in parameters:
+                        # We check if the return value of ecrecover is compared to an address in parameter
+                        if str(parameter.type) == "address" and str(parameter) in str(conditional_node.expression):
+                            return True
+        return False
+
     def _detect(self) -> List[Output]:
         results = []
 
@@ -161,14 +188,11 @@ class Backdoor(AbstractDetector):
                         signature_validitycheck = True  # TODO: check “ecrecover” returning value (source) dependency on an address from one of the function parameters (PO: parameter owner) (sink) and not zero in conditional statement (If, require, bool)
 
                         # Get all the functions that call ecrecover_func
-                        funcs_that_calls_ecrecover_func = set(ecrecover_func.all_reachable_from_functions)
+                        funcs_that_calls_ecrecover_func = set(ecrecover_func.all_reachable_from_functions).union({ecrecover_func})
 
-                        for func in funcs_that_calls_ecrecover_func:
-                            parameters = func.parameters
-                            # TODO: check if conditional statement
-                            # TODO: check if ecrecover return == address
+                        signature_validitycheck = self.check_ecrecover_returning_value(funcs_that_calls_ecrecover_func)
+                        print(signature_validitycheck)
 
-                        print([el.name for el in funcs_that_calls_ecrecover_func])
                         # Get all the functions called by ecrecover_func excluding solidity ones
                         funcs_called_by_ecrecover_func = set(ecrecover_func.all_internal_calls()) - set(ecrecover_func.all_solidity_calls())
                         #solidity_func = ecrecover_func.all_solidity_calls()[0]
@@ -190,6 +214,7 @@ class Backdoor(AbstractDetector):
                             #print([(el.node.function.name, [par.name for par in el.node.function.parameters]) for el in inspecting_func.])
                             #for arg in inspecting_func.parameters:
 
+                            # TODO: check inside the argument of keccak if there is deadline (link with block.timestamp/block.number/now) and nonce (depends on an address and is incrementable)
 
 
                             # Add the functions called by the function analyzed
@@ -208,7 +233,8 @@ class Backdoor(AbstractDetector):
                         #             A_child = ir.function.nodes
                         #             # print(A_child)
 
-                        info: DETECTOR_INFO = ["ecrecover found in function: ", ecrecover_func.name, "\n"]
+                        info: DETECTOR_INFO = ["ecrecover found in function: ", ecrecover_func.name, "\n",
+                                               f"ecrecover returning value dependency on an address from parameters: {signature_validitycheck}\n"]
 
                         # Add the result in result
                         res = self.generate_result(info)
