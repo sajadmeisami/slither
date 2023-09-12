@@ -146,7 +146,7 @@ class Backdoor(AbstractDetector):
 
                     for parameter in parameters:
                         # We check if the return value of ecrecover is compared to an address in parameter
-                        if str(parameter.type) == "address" and str(parameter) in str(conditional_node.expression):
+                        if str(parameter.type) not in "uint8bytes32" and str(parameter) in str(conditional_node.expression):
                             return True
         return False
 
