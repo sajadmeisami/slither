@@ -18,16 +18,25 @@ contract Example {
     }
 
 
-    function permit(address owner, address spender, uint value, uint deadline, uint8 v, bytes32 r, bytes32 s) external {
+    function permit(address owner, address spender, uint value, uint deadline, uint8 v, bytes32 r, bytes32 s) internal returns (address){
         require(deadline >= block.timestamp, 'UniswapV2: EXPIRED');
         bytes32 digest = keccak256(
             abi.encodePacked(
                 '\x19\x01',
                 DOMAIN_SEPARATOR,
-                keccak256(abi.encode(PERMIT_TYPEHASH, owner, spender, value, nonces[owner]++, deadline))
+                keccak256(abi.encode(PERMIT_TYPEHASH, owner, spender, value, deadline))
             )
         );
         address recoveredAddress = ecrecover(digest, v, r, s);
-        require(recoveredAddress != address(0) && recoveredAddress == owner, 'UniswapV2: INVALID_SIGNATURE');
+        return recoveredAddress;
+
+    }
+
+    function test(address owner, address spender, uint value, uint deadline, uint8 v, bytes32 r, bytes32 s) internal returns (address) {
+        return permit(owner, spender, value, deadline, v, r, s);
+    }
+    function tolo(address owner, address spender, uint value, uint deadline, uint8 v, bytes32 r, bytes32 s) external {
+        address add = test(owner, spender, value, deadline, v, r, s);
+        require(add != address(0) && add == owner, 'UniswapV2: INVALID_SIGNATURE');
     }
 }

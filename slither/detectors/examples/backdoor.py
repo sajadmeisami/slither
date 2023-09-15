@@ -124,30 +124,49 @@ class Backdoor(AbstractDetector):
     WIKI_RECOMMENDATION = ".."
 
     @staticmethod
-    def check_ecrecover_returning_value(funcs_that_calls_ecrecover_func):
+    def _check_var_is_conditional(function, name_to_verify):
+        conditional_node = None
+        for operation in function.all_slithir_operations():
+            if name_to_verify in str(operation.node.expression):
+                conditional_node = operation.node
+                variables_to_check = set(operation.node.variables_written)
+                variables_checked = set()
+                while variables_to_check:
+                    ecrecover_var = variables_to_check.pop()
+                    variables_checked.add(ecrecover_var)
+                    for oper in function.all_slithir_operations():
+                        if ecrecover_var.name in str(oper.node.expression):
+                            variables_to_check.update(set(oper.node.variables_written) - variables_checked)
+                            if oper.node.is_conditional():
+                                conditional_node = oper.node
+                                variables_to_check = set()  # We want to exit the while loop
+                                break
+
+        return conditional_node
+
+    @staticmethod
+    def _check_ecrecover_returning_value(funcs_that_calls_ecrecover_func):
 
         for func in funcs_that_calls_ecrecover_func:
             parameters = func.parameters
-            for operation in func.all_slithir_operations():
-                if "ecrecover" in str(operation.node.expression):
-                    conditional_node = operation.node
-                    variables_to_check = set(operation.node.variables_written)
-                    variables_checked = set()
-                    while variables_to_check:
-                        ecrecover_var = variables_to_check.pop()
-                        variables_checked.add(ecrecover_var)
-                        for oper in func.all_slithir_operations():
-                            if ecrecover_var.name in str(oper.node.expression):
-                                variables_to_check.update(set(oper.node.variables_written) - variables_checked)
-                                if oper.node.is_conditional():
-                                    conditional_node = oper.node
-                                    variables_to_check = set()  # We want to exit the while loop
-                                    break
+            ecrecover_conditional_node = Backdoor._check_var_is_conditional(func, "ecrecover")
 
-                    for parameter in parameters:
-                        # We check if the return value of ecrecover is compared to an address in parameter
-                        if str(parameter.type) not in "uint8bytes32" and str(parameter) in str(conditional_node.expression):
-                            return True
+            if ecrecover_conditional_node:
+                # If we cannot find a conditional node inside the ecrecover function, it may be outside
+                if not ecrecover_conditional_node.is_conditional():
+                    functions_to_check = set(funcs_that_calls_ecrecover_func) - {func}
+                    for function_checked in functions_to_check:
+                        return_ecrecover_node = Backdoor._check_var_is_conditional(function_checked, func.name)
+                        if return_ecrecover_node and return_ecrecover_node.is_conditional():
+                            ecrecover_conditional_node = return_ecrecover_node
+                            break
+
+                for parameter in parameters:
+                    # We check if the return value of ecrecover is compared to an address in parameter
+                    # 'not in "uint8bytes32"' eliminates uint / uint8 / bytes / bytes32 type parameters
+                    if str(parameter.type) not in "uint8bytes32" and str(parameter) in str(ecrecover_conditional_node.expression):
+                        return True
+
         return False
 
     def _detect(self) -> List[Output]:
@@ -190,7 +209,7 @@ class Backdoor(AbstractDetector):
                         # Get all the functions that call ecrecover_func
                         funcs_that_calls_ecrecover_func = set(ecrecover_func.all_reachable_from_functions).union({ecrecover_func})
 
-                        signature_validitycheck = self.check_ecrecover_returning_value(funcs_that_calls_ecrecover_func)
+                        signature_validitycheck = self._check_ecrecover_returning_value(funcs_that_calls_ecrecover_func)
                         print(signature_validitycheck)
 
                         # Get all the functions called by ecrecover_func excluding solidity ones
