@@ -236,6 +236,32 @@ class Backdoor(AbstractDetector):
                             # TODO: check inside the argument of keccak if there is deadline (link with block.timestamp/block.number/now) and nonce (depends on an address and is incrementable)
 
 
+
+                            for operation in inspecting_func.all_slithir_operations():
+                                if isinstance(operation, SolidityCall):
+                                    #print(operation.node.expression)
+                                    #print(operation.node.function.parameters)
+                                    variable_to_check = set(operation.node.variables_read)
+                                    variable_checked = set()
+                                    while variable_to_check:
+                                        deadline_nonce = variable_to_check.pop()
+                                        variable_checked.add(deadline_nonce)
+                                        if deadline_nonce in operation.node.function.parameters:
+                                            #print(deadline.name)
+                                            for oper in inspecting_func.all_slithir_operations():
+                                                if deadline_nonce.name in str(oper.node.expression):
+                                                    variable_to_check.update(set(oper.node.variables_read) - variable_checked)
+                                                    if oper.node.is_conditional():
+                                                        if "block.timestamp" in str(oper.node)\
+                                                                or "block.number"in str(oper.node)\
+                                                                or "now" in str(oper.node):
+                                                            print(deadline_nonce.name)
+                                                            variable_to_check = set()
+                                                            break
+
+                                        #else:
+                                            #nonce
+
                             # Add the functions called by the function analyzed
                             # (functions that calls it are already added by "all_reachable_from_functions")
                             #funcs_called_by_inspecting_func = set(inspecting_func.all_internal_calls()) - set(inspecting_func.all_solidity_calls()) - funcs_inspected
