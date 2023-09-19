@@ -245,6 +245,7 @@ class Backdoor(AbstractDetector):
                                     variable_checked = set()
                                     while variable_to_check:
                                         deadline_nonce = variable_to_check.pop()
+                                        #print(deadline_nonce.name)
                                         variable_checked.add(deadline_nonce)
                                         if deadline_nonce in operation.node.function.parameters:
                                             #print(deadline.name)
@@ -257,12 +258,35 @@ class Backdoor(AbstractDetector):
                                                                 or "block.number"in str(oper.node)\
                                                                 or "now" in str(oper.node):
                                                             #print(deadline_nonce.name)
-                                                            deadline = deadline_nonce
                                                             deadline_usage = True
                                                             variable_to_check = set()
-                                                            break
-                                        #else:
-                                            #nonce
+
+                                        else:
+                                            '''if str(deadline_nonce.type) == 'mapping(address => uint256)':
+                                                print(deadline_nonce.name)
+                                                s = deadline_nonce.source_mapping.content
+                                                z= deadline_nonce.solidity_signature
+                                                print(s, z)'''
+                                            for ope in inspecting_func.all_slithir_operations():
+                                                if deadline_nonce.name in str(ope.node.expression):
+                                                    variable_to_check.update(set(ope.node.variables_read) - variable_checked)
+                                                    if deadline_nonce in ope.node.state_variables_read:
+                                                        if str(deadline_nonce.type) == 'mapping(address => uint256)':
+                                                            print(deadline_nonce, ope.node.function)
+                                                            nonce_usage = True
+                                                            for param in inspecting_func.parameters:
+                                                                if str(param.type) == "address":
+                                                                    #print(operation.node.expression)
+                                                                    #print(f"{str(ope.node.function.name)}({(str(param.name))})")
+                                                                    if (f"{str(ope.node.function.name)}+{(str(param.name))}") in str(operation.node.expression):
+                                                                        print(param.name)
+                                                                    #if str(param) in deadline_nonce.:
+                                                                        #print(param.name)
+
+
+                                                    #elif str(deadline_nonce.type) == 'uint256':
+                                                        #print(deadline_nonce.name)
+
 
                             # Add the functions called by the function analyzed
                             # (functions that calls it are already added by "all_reachable_from_functions")
@@ -280,9 +304,10 @@ class Backdoor(AbstractDetector):
                         #             A_child = ir.function.nodes
                         #             # print(A_child)
 
-                        info: DETECTOR_INFO = ["ecrecover found in function: ", ecrecover_func.name, "\n",
+                        info: DETECTOR_INFO = [f"ecrecover usage: {ecrecover_usage} ", f" ; ecrecover location: {ecrecover_func.name}\n",
                                                f"ecrecover returning value dependency on an address from parameters: {signature_validitycheck}\n"
-                                               f"deadline usage: {deadline_usage} and paramter name is: {deadline}\n"]
+                                               f"deadline usage: {deadline_usage}\n"
+                                               f"nonce usage: {nonce_usage}\n"]
 
                         # Add the result in result
                         res = self.generate_result(info)
