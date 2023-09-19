@@ -249,16 +249,18 @@ class Backdoor(AbstractDetector):
                                         if deadline_nonce in operation.node.function.parameters:
                                             #print(deadline.name)
                                             for oper in inspecting_func.all_slithir_operations():
-                                                if deadline_nonce.name in str(oper.node.expression):
+                                                if deadline_nonce.name in str(oper.node.expression)\
+                                                        and str(deadline_nonce.type) == 'uint256':
                                                     variable_to_check.update(set(oper.node.variables_read) - variable_checked)
                                                     if oper.node.is_conditional():
                                                         if "block.timestamp" in str(oper.node)\
                                                                 or "block.number"in str(oper.node)\
                                                                 or "now" in str(oper.node):
-                                                            print(deadline_nonce.name)
+                                                            #print(deadline_nonce.name)
+                                                            deadline = deadline_nonce
+                                                            deadline_usage = True
                                                             variable_to_check = set()
                                                             break
-
                                         #else:
                                             #nonce
 
@@ -279,7 +281,8 @@ class Backdoor(AbstractDetector):
                         #             # print(A_child)
 
                         info: DETECTOR_INFO = ["ecrecover found in function: ", ecrecover_func.name, "\n",
-                                               f"ecrecover returning value dependency on an address from parameters: {signature_validitycheck}\n"]
+                                               f"ecrecover returning value dependency on an address from parameters: {signature_validitycheck}\n"
+                                               f"deadline usage: {deadline_usage} and paramter name is: {deadline}\n"]
 
                         # Add the result in result
                         res = self.generate_result(info)
