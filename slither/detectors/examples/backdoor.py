@@ -193,35 +193,24 @@ class Backdoor(AbstractDetector):
         signature_validitycheck = False
         deadline_usage = False
         nonce_usage = False
+        nonce_name = None
+        deadline_name = None
 
         for contract in self.compilation_unit.contracts_derived:
             for function in contract.functions:
                 for node in function.nodes:
-                    # print(str(node.expression))
                     if "ecrecover" in str(node.expression):
                         ecrecover_usage = True
                         ecrecover_count += 1
                         ecrecover_func = node.function
-                        print(ecrecover_func.name)
-
-                        signature_validitycheck = True  # TODO: check “ecrecover” returning value (source) dependency on an address from one of the function parameters (PO: parameter owner) (sink) and not zero in conditional statement (If, require, bool)
 
                         # Get all the functions that call ecrecover_func
                         funcs_that_calls_ecrecover_func = set(ecrecover_func.all_reachable_from_functions).union({ecrecover_func})
 
                         signature_validitycheck = self._check_ecrecover_returning_value(funcs_that_calls_ecrecover_func)
-                        print(signature_validitycheck)
 
                         # Get all the functions called by ecrecover_func excluding solidity ones
                         funcs_called_by_ecrecover_func = set(ecrecover_func.all_internal_calls()) - set(ecrecover_func.all_solidity_calls())
-                        #solidity_func = ecrecover_func.all_solidity_calls()[0]
-                        #print(solidity_func.full_name)
-                        #print([el.to_json() for el in solidity_func.references])
-                        #print([el.name for el in funcs_called_by_ecrecover_func])
-
-                        fun = ecrecover_func.all_solidity_calls()[0]
-                        #print(fun.name)
-                        #print(fun.source_mapping)
 
                         funcs_to_inspect = funcs_that_calls_ecrecover_func.union(funcs_called_by_ecrecover_func)
                         funcs_inspected = set()
@@ -229,26 +218,15 @@ class Backdoor(AbstractDetector):
                         while funcs_to_inspect != set():
                             inspecting_func = funcs_to_inspect.pop()
                             funcs_inspected.add(inspecting_func)
-                            #print(inspecting_func.name)
-                            #print([(el.node.function.name, [par.name for par in el.node.function.parameters]) for el in inspecting_func.])
-                            #for arg in inspecting_func.parameters:
-
-                            # TODO: check inside the argument of keccak if there is deadline (link with block.timestamp/block.number/now) and nonce (depends on an address and is incrementable)
-
-
 
                             for operation in inspecting_func.all_slithir_operations():
                                 if isinstance(operation, SolidityCall):
-                                    #print(operation.node.expression)
-                                    #print(operation.node.function.parameters)
                                     variable_to_check = set(operation.node.variables_read)
                                     variable_checked = set()
                                     while variable_to_check:
                                         deadline_nonce = variable_to_check.pop()
-                                        #print(deadline_nonce.name)
                                         variable_checked.add(deadline_nonce)
                                         if deadline_nonce in operation.node.function.parameters:
-                                            #print(deadline.name)
                                             for oper in inspecting_func.all_slithir_operations():
                                                 if deadline_nonce.name in str(oper.node.expression)\
                                                         and str(deadline_nonce.type) == 'uint256':
@@ -257,10 +235,9 @@ class Backdoor(AbstractDetector):
                                                         if "block.timestamp" in str(oper.node)\
                                                                 or "block.number"in str(oper.node)\
                                                                 or "now" in str(oper.node):
-                                                            #print(deadline_nonce.name)
                                                             deadline_usage = True
-                                                            variable_to_check = set()
-
+                                                            deadline_name = deadline_nonce.name
+                                                            break
                                         else:
                                             '''if str(deadline_nonce.type) == 'mapping(address => uint256)':
                                                 print(deadline_nonce.name)
@@ -272,46 +249,19 @@ class Backdoor(AbstractDetector):
                                                     variable_to_check.update(set(ope.node.variables_read) - variable_checked)
                                                     if deadline_nonce in ope.node.state_variables_read:
                                                         if str(deadline_nonce.type) == 'mapping(address => uint256)':
-                                                            print(deadline_nonce, ope.node.function)
-                                                            nonce_usage = True
                                                             for param in inspecting_func.parameters:
-                                                                if str(param.type) == "address":
-                                                                    #print(operation.node.expression)
-                                                                    #print(f"{str(ope.node.function.name)}({(str(param.name))})")
-                                                                    if (f"{str(ope.node.function.name)}+{(str(param.name))}") in str(operation.node.expression):
-                                                                        print(param.name)
-                                                                    #if str(param) in deadline_nonce.:
-                                                                        ###print(param.name)
-
-
-                                                    #elif str(deadline_nonce.type) == 'uint256':
-                                                        #print(deadline_nonce.name)
-
-
-                            # Add the functions called by the function analyzed
-                            # (functions that calls it are already added by "all_reachable_from_functions")
-                            #funcs_called_by_inspecting_func = set(inspecting_func.all_internal_calls()) - set(inspecting_func.all_solidity_calls()) - funcs_inspected
-                            #funcs_to_inspect.update(funcs_called_by_inspecting_func)
-
-                        # for ir in A.all_slithir_operations():
-                        #     if isinstance(ir, Call):
-                        #         # print(ir)
-                        #         if isinstance(ir, SolidityCall):
-                        #             print(ir.function)
-                        #             # if "ecrecover" in ir.function.name:
-                        #             # print(ir.function)
-                        #         elif isinstance(ir, InternalCall):
-                        #             A_child = ir.function.nodes
-                        #             # print(A_child)
+                                                                if str(param.type) not in "uint8bytes32" and str(param) in str(ope.node.expression):
+                                                                    nonce_usage = True
+                                                                    nonce_name = deadline_nonce.name
+                                                                    break
 
                         info: DETECTOR_INFO = [f"ecrecover usage: {ecrecover_usage} ", f" ; ecrecover location: {ecrecover_func.name}\n",
                                                f"ecrecover returning value dependency on an address from parameters: {signature_validitycheck}\n"
-                                               f"deadline usage: {deadline_usage}\n"
-                                               f"nonce usage: {nonce_usage}\n"]
+                                               f"deadline usage: {deadline_usage}; deadline name: {deadline_name}\n"
+                                               f"nonce usage: {nonce_usage}; nonce name: {nonce_name}\n"]
 
                         # Add the result in result
                         res = self.generate_result(info)
-
                         results.append(res)
 
         return results
