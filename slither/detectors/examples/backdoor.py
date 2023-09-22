@@ -124,7 +124,7 @@ class Backdoor(AbstractDetector):
     WIKI_RECOMMENDATION = ".."
 
     @staticmethod
-    def _check_var_is_conditional(function, name_to_verify):
+    def _check_var_is_conditional(function: Function, name_to_verify: str) -> Node:
         conditional_node = None
         for operation in function.all_slithir_operations():
             if name_to_verify in str(operation.node.expression):
@@ -145,7 +145,7 @@ class Backdoor(AbstractDetector):
         return conditional_node
 
     @staticmethod
-    def _check_ecrecover_returning_value(funcs_that_calls_ecrecover_func):
+    def _check_ecrecover_returning_value(funcs_that_calls_ecrecover_func: Set[Function]) -> bool:
 
         for func in funcs_that_calls_ecrecover_func:
             parameters = func.parameters
@@ -169,6 +169,29 @@ class Backdoor(AbstractDetector):
 
         return False
 
+    @staticmethod
+    def _find_position_of_variable(master_function: Function, var_function: Function, variable: Variable, digest: Variable) -> int:
+        funcs_visited = [var_function]
+        funcs_to_visit = {var_function}
+        next_function = funcs_to_visit.pop()
+
+        while master_function != next_function:
+            for func in next_function.reachable_from_functions:
+                if func not in funcs_visited:
+                    funcs_to_visit.add(func)
+            if funcs_to_visit == set():
+                break
+            next_function = funcs_to_visit.pop()
+            funcs_visited.append(next_function)
+
+        position = 0
+        for func in funcs_visited:
+            print([str(var.expression) for var in func.variables_written])
+            print([var.name for var in func.variables_read])
+
+        print()
+        return 1
+
     def _detect(self) -> List[Output]:
         results = []
 
@@ -188,13 +211,15 @@ class Backdoor(AbstractDetector):
                 return results
                 '''
 
-        ecrecover_usage = False
         ecrecover_count = 0
-        signature_validitycheck = False
         deadline_usage = False
         nonce_usage = False
-        nonce_name = None
-        deadline_name = None
+        nonce_var = None
+        deadline_var = None
+        deadline_info = ""
+        nonce_info = ""
+        deadline_function = None
+        nonce_function = None
 
         for contract in self.compilation_unit.contracts_derived:
             for function in contract.functions:
@@ -203,6 +228,16 @@ class Backdoor(AbstractDetector):
                         ecrecover_usage = True
                         ecrecover_count += 1
                         ecrecover_func = node.function
+
+                        # Fiding the variable used as digest
+                        ecrecover_digest_name = str(node.expression).split("ecrecover(")[1].split("(")[1].split(",")[0]
+                        for var in node.variables_read:
+                            if var.name == ecrecover_digest_name:
+                                ecrecover_digest = var
+
+                        for expr in node.internal_calls:
+                            if ecrecover_digest_name in str(expr):
+                                ecrecover_digest = expr
 
                         # Get all the functions that call ecrecover_func
                         funcs_that_calls_ecrecover_func = set(ecrecover_func.all_reachable_from_functions).union({ecrecover_func})
@@ -236,7 +271,8 @@ class Backdoor(AbstractDetector):
                                                                 or "block.number"in str(oper.node)\
                                                                 or "now" in str(oper.node):
                                                             deadline_usage = True
-                                                            deadline_name = deadline_nonce.name
+                                                            deadline_var = deadline_nonce
+                                                            deadline_function = oper.node.function
                                                             break
                                         else:
                                             '''if str(deadline_nonce.type) == 'mapping(address => uint256)':
@@ -248,17 +284,34 @@ class Backdoor(AbstractDetector):
                                                 if deadline_nonce.name in str(ope.node.expression):
                                                     variable_to_check.update(set(ope.node.variables_read) - variable_checked)
                                                     if deadline_nonce in ope.node.state_variables_read:
-                                                        if str(deadline_nonce.type) == 'mapping(address => uint256)':
-                                                            for param in inspecting_func.parameters:
+                                                        signature_address = deadline_nonce.signature[1]
+                                                        signature_uint = deadline_nonce.signature[2]
+                                                        if signature_uint != [] and "address" in signature_address and "uint" in signature_uint[0]:
+                                                            for param in ope.node.function.parameters:
                                                                 if str(param.type) not in "uint8bytes32" and str(param) in str(ope.node.expression):
                                                                     nonce_usage = True
-                                                                    nonce_name = deadline_nonce.name
+                                                                    nonce_var = deadline_nonce
+                                                                    nonce_function = ope.node.function
                                                                     break
+
+                        if deadline_usage:
+                            deadline_position = self._find_position_of_variable(ecrecover_func, deadline_function, deadline_var, ecrecover_digest)
+                            if deadline_position > 0:
+                                deadline_info = f"; name: {deadline_var.name}; position; {deadline_position}"
+                            else:
+                                deadline_usage = False
+
+                        if nonce_usage:
+                            nonce_position = self._find_position_of_variable(ecrecover_func, nonce_function, nonce_var, ecrecover_digest)
+                            if nonce_position > 0:
+                                nonce_info = f"; name: {nonce_var.name}; position: {nonce_position}"
+                            else:
+                                nonce_usage = False
 
                         info: DETECTOR_INFO = [f"ecrecover usage: {ecrecover_usage} ", f" ; ecrecover location: {ecrecover_func.name}\n",
                                                f"ecrecover returning value dependency on an address from parameters: {signature_validitycheck}\n"
-                                               f"deadline usage: {deadline_usage}; deadline name: {deadline_name}\n"
-                                               f"nonce usage: {nonce_usage}; nonce name: {nonce_name}\n"]
+                                               f"deadline usage: {deadline_usage}{deadline_info}\n"
+                                               f"nonce usage: {nonce_usage}{nonce_info}\n"]
 
                         # Add the result in result
                         res = self.generate_result(info)

@@ -17,9 +17,25 @@ contract Example {
         );
     }
 
+    function getnon(address add) internal returns (uint) {
+        return nonces[add]++;
+    }
+    function getno(address add) internal returns (uint) {
+        test(0x0, 0x0, 0, 0 ,0, 0x0, 0x0);
+        return getnon(add);
+    }
+
+    function addri(address spender, address add, address owner) pure internal returns (address) {
+        return add;
+    }
+
+    function getDigest() internal returns (bytes32) {
+        return 0x0;
+    }
 
     function permit(address owner, address spender, uint value, uint deadline, uint8 v, bytes32 r, bytes32 s) internal returns (address){
         require(deadline >= block.timestamp, 'UniswapV2: EXPIRED');
+        uint nonce = getno(owner);
         bytes32 digest = keccak256(
             abi.encodePacked(
                 '\x19\x01',
@@ -27,7 +43,7 @@ contract Example {
                 keccak256(abi.encode(PERMIT_TYPEHASH, owner, spender, value, deadline))
             )
         );
-        address recoveredAddress = ecrecover(digest, v, r, s);
+        address recoveredAddress = addri(spender, ecrecover(getDigest(), v, r, s), owner);
         return recoveredAddress;
 
     }
