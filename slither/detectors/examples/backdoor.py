@@ -313,22 +313,23 @@ class Backdoor(AbstractDetector):
                         if deadline_usage:
                             deadline_position = self._find_position_of_variable(ecrecover_func, deadline_function, deadline_var, ecrecover_digest)
                             if deadline_position > 0:
-                                deadline_info = f"; name: {deadline_var.name}; position; {deadline_position-3}"
+                                deadline_info = f"deadline_name: {deadline_var.name}\n deadline_position; {deadline_position-3}"
                             else:
                                 deadline_usage = False
 
                         if nonce_usage:
                             nonce_position = self._find_position_of_variable(ecrecover_func, nonce_function, nonce_var, ecrecover_digest)
                             if nonce_position > 0:
-                                nonce_info = f"; name: {nonce_var.name}; position: {nonce_position-3}"
+                                nonce_info = f"nonce_name: {nonce_var.name}\n nonce_position: {nonce_position-3}"
                             else:
                                 nonce_usage = False
 
-                        info: DETECTOR_INFO = [f"ecrecover usage: {ecrecover_usage} ", f" ; ecrecover location: {ecrecover_func.name}\n",
+                        info: DETECTOR_INFO = [f"ecrecover usage: {ecrecover_usage}\n",
+                                               f"ecrecover location: {ecrecover_func.name}\n",
                                                f"signature validity check: {signature_validitycheck}\n"
                                                f"signature type: {signature_info}\n"
-                                               f"deadline usage: {deadline_usage}{deadline_info}\n"
-                                               f"nonce usage: {nonce_usage}{nonce_info}\n"]
+                                               f"deadline usage: {deadline_usage}\n {deadline_info}\n"
+                                               f"nonce usage: {nonce_usage}\n {nonce_info}\n"]
 
                         # Add the result in result
                         res = self.generate_result(info)
