@@ -220,8 +220,10 @@ class Backdoor(AbstractDetector):
         ecrecover_count = 0
         deadline_usage = False
         nonce_usage = False
+        ecrecover_digest = None
         nonce_var = None
         deadline_var = None
+        signature_info = ""
         deadline_info = ""
         nonce_info = ""
         deadline_function = None
@@ -300,6 +302,14 @@ class Backdoor(AbstractDetector):
                                                                     nonce_function = ope.node.function
                                                                     break
 
+                        if "\x19\x01" in str(ecrecover_digest.expression):
+                            domain_separator = str(ecrecover_digest.expression).split(",")[1]
+                            signature_info = f"signTypedData; domain separator: {domain_separator}"
+                        elif "\x19Ethereum Signed Message:" in str(ecrecover_digest.expression):
+                            signature_info = "personal sign"
+                        else:
+                            signature_info = "not signTypedData nor personal sign"
+
                         if deadline_usage:
                             deadline_position = self._find_position_of_variable(ecrecover_func, deadline_function, deadline_var, ecrecover_digest)
                             if deadline_position > 0:
@@ -316,6 +326,7 @@ class Backdoor(AbstractDetector):
 
                         info: DETECTOR_INFO = [f"ecrecover usage: {ecrecover_usage} ", f" ; ecrecover location: {ecrecover_func.name}\n",
                                                f"ecrecover returning value dependency on an address from parameters: {signature_validitycheck}\n"
+                                               f"signature type: {signature_info}\n"
                                                f"deadline usage: {deadline_usage}{deadline_info}\n"
                                                f"nonce usage: {nonce_usage}{nonce_info}\n"]
 
