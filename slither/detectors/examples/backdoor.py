@@ -170,7 +170,7 @@ class Backdoor(AbstractDetector):
         return False
 
     @staticmethod
-    def _find_position_of_variable(master_function: Function, var_function: Function, variable: Variable, digest: Variable) -> int:
+    def _find_position_of_variable(master_function: Function, var_function: Function, var_to_find: Variable, digest_var: Variable) -> int:
         funcs_visited = [var_function]
         funcs_to_visit = {var_function}
         next_function = funcs_to_visit.pop()
@@ -185,12 +185,18 @@ class Backdoor(AbstractDetector):
             funcs_visited.append(next_function)
 
         position = 0
-        for func in funcs_visited:
-            print([str(var.expression) for var in func.variables_written])
-            print([var.name for var in func.variables_read])
+        final_var_to_find = var_to_find if len(funcs_visited) == 1 else funcs_visited[-2]
 
-        print()
-        return 1
+        for var in funcs_visited.pop().variables_written:
+            if digest_var.name in var.name:
+                expression_parsed = str(var.expression).split(",")
+                expression_parsed.reverse()
+                position += 1
+
+                while expression_parsed and final_var_to_find.name not in expression_parsed.pop():
+                    position += 1
+
+        return position
 
     def _detect(self) -> List[Output]:
         results = []

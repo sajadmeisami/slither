@@ -26,25 +26,27 @@ contract Example {
     }
 
     function addri(address spender, address add, address owner) pure internal returns (address) {
-        return add;
+        spender = owner;
+        owner = add;
+        return owner;
     }
 
-    function getDigest() internal returns (bytes32) {
+    function getDigest() pure internal returns (bytes32) {
         return 0x0;
     }
 
     function permit(address owner, address spender, uint value, uint deadline, uint8 v, bytes32 r, bytes32 s) internal returns (address){
         require(deadline >= block.timestamp, 'UniswapV2: EXPIRED');
-        uint nonce = getno(owner);
         bytes32 digest = keccak256(
             abi.encodePacked(
-                '\x19\x01',
-                DOMAIN_SEPARATOR,
-                keccak256(abi.encode(PERMIT_TYPEHASH, owner, spender, value, deadline))
+                '\x19\x01', // if this --> eth_signtypedata
+                DOMAIN_SEPARATOR, // print that this is present or not
+                keccak256(abi.encode(PERMIT_TYPEHASH, owner, getno(owner), spender, value, deadline))
             )
         );
-        address recoveredAddress = addri(spender, ecrecover(getDigest(), v, r, s), owner);
+        address recoveredAddress = ecrecover(digest, v, r, s);
         return recoveredAddress;
+        //return keccak256("\x19Ethereum Signed Message:\n32", hashOrder(order)); --> personal sign
 
     }
 
